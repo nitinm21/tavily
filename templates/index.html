@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="search-section">
+    <div class="search-box">
+        <h2>Compare Search APIs for RAG</h2>
+        <p>See how Tavily delivers RAG-ready content in a single API call</p>
+
+        <form id="searchForm">
+            <div class="input-group">
+                <input
+                    type="text"
+                    id="query"
+                    name="query"
+                    placeholder="Try: What is RAG in AI?"
+                    required
+                    autocomplete="off"
+                />
+                <button type="submit" id="searchBtn">Compare</button>
+            </div>
+            <div class="form-options">
+                <label>
+                    Max results:
+                    <select name="max_results" id="maxResults">
+                        <option value="3">3</option>
+                        <option value="5" selected>5</option>
+                        <option value="10">10</option>
+                    </select>
+                </label>
+            </div>
+        </form>
+
+        <!-- Example Queries Section -->
+        <div class="example-queries">
+            <p class="example-label">Try these examples:</p>
+            <div class="example-chips">
+                <button type="button" class="example-chip" data-query="Latest developments in transformer architectures">
+                    Latest developments in transformer architectures
+                </button>
+                <button type="button" class="example-chip" data-query="What are competitors saying about AI agents?">
+                    What are competitors saying about AI agents?
+                </button>
+                <button type="button" class="example-chip" data-query="Current news about Tavily">
+                    Current news about Tavily
+                </button>
+                <button type="button" class="example-chip" data-query="How does RAG work with vector databases?">
+                    How does RAG work with vector databases?
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+        <p>Comparing search results...</p>
+    </div>
+
+    <div id="error" class="error hidden"></div>
+</div>
+
+<div id="results" class="results-section hidden">
+    <div class="comparison-header">
+        <h3>Search Results for: <span id="searchQuery"></span></h3>
+    </div>
+
+    <div class="comparison-grid">
+        <!-- Tavily Results -->
+        <div class="comparison-column tavily-column">
+            <div class="column-header tavily-header">
+                <div class="header-left">
+                    <h3>Tavily Search API</h3>
+                    <span class="badge success">RAG-Ready</span>
+                </div>
+                <div class="header-stats">
+                    <div class="stat-row">
+                        <strong id="tavilyTokens">0</strong>
+                        <span class="stat-label-small">tokens total</span>
+                    </div>
+                    <div class="stat-row">
+                        <strong id="tavilyAvgTokens">0</strong>
+                        <span class="stat-label-small">avg per result</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="answer-section" id="tavilyAnswer" style="display: none;">
+                <h4>AI-Generated Answer</h4>
+                <div class="answer-content"></div>
+            </div>
+
+            <div class="results-list" id="tavilyResults"></div>
+        </div>
+
+        <!-- Traditional Search Results -->
+        <div class="comparison-column traditional-column">
+            <div class="column-header traditional-header">
+                <div class="header-left">
+                    <h3>Traditional Search API</h3>
+                    <span class="badge warning">Needs Scraping</span>
+                </div>
+                <div class="header-stats">
+                    <div class="stat-row">
+                        <strong id="traditionalTokens">0</strong>
+                        <span class="stat-label-small">tokens total</span>
+                    </div>
+                    <div class="stat-row">
+                        <strong id="traditionalAvgTokens">0</strong>
+                        <span class="stat-label-small">avg per result</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <strong>Note:</strong> Traditional search APIs return URLs + snippets only. You'll need to scrape, extract, and clean content separately.
+            </div>
+
+            <div class="results-list" id="traditionalResults"></div>
+
+            <div class="workflow-box">
+                <h4>Additional Steps Needed:</h4>
+                <ol id="traditionalWorkflow"></ol>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comparison Insights -->
+    <div class="insights-section">
+        <h3>Why Tavily is Better for RAG</h3>
+
+        <div class="insight-grid">
+            <div class="insight-card">
+                <h4>Token Efficiency</h4>
+                <div class="insight-content">
+                    <p class="highlight" id="tokenRatio">0x more content</p>
+                    <p class="detail" id="tokenDetail"></p>
+                </div>
+            </div>
+
+            <div class="insight-card">
+                <h4>Context Window Utilization</h4>
+                <div class="insight-content">
+                    <p class="highlight" id="contextFit">0 results in 4K</p>
+                    <p class="detail">Tavily's extracted content is immediately usable in LLM context</p>
+                </div>
+            </div>
+
+            <div class="insight-card">
+                <h4>Developer Experience</h4>
+                <div class="insight-content">
+                    <p class="highlight">1 API Call</p>
+                    <p class="detail">vs API call + N scraping requests + error handling</p>
+                </div>
+            </div>
+
+            <div class="insight-card">
+                <h4>RAG Readiness</h4>
+                <div class="insight-content">
+                    <p class="highlight">Immediate</p>
+                    <p class="detail">Extracted, cleaned content ready for your AI agent</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Developer Efficiency Dashboard -->
+    <div class="efficiency-dashboard">
+        <h3>Developer Efficiency Metrics</h3>
+        <p class="dashboard-subtitle">The real cost of building with search APIs</p>
+
+        <div class="efficiency-grid">
+            <!-- API Calls -->
+            <div class="efficiency-card">
+                <div class="efficiency-icon">⚡</div>
+                <h4>API Calls Required</h4>
+                <div class="efficiency-comparison">
+                    <div class="efficiency-value tavily">
+                        <span class="value">1</span>
+                        <span class="label">Tavily</span>
+                    </div>
+                    <div class="vs">vs</div>
+                    <div class="efficiency-value traditional">
+                        <span class="value" id="traditionalApiCalls">6</span>
+                        <span class="label">Traditional</span>
+                    </div>
+                </div>
+                <p class="efficiency-detail">1 search + N scraping requests + retries</p>
+            </div>
+
+            <!-- Time to Production -->
+            <div class="efficiency-card">
+                <div class="efficiency-icon">⏱️</div>
+                <h4>Time to Get Content</h4>
+                <div class="efficiency-comparison">
+                    <div class="efficiency-value tavily">
+                        <span class="value">&lt;1s</span>
+                        <span class="label">Tavily</span>
+                    </div>
+                    <div class="vs">vs</div>
+                    <div class="efficiency-value traditional">
+                        <span class="value">5-10s</span>
+                        <span class="label">Traditional</span>
+                    </div>
+                </div>
+                <p class="efficiency-detail">Sequential scraping + parsing overhead</p>
+            </div>
+
+            <!-- Content Quality -->
+            <div class="efficiency-card">
+                <div class="efficiency-icon">✨</div>
+                <h4>Content Quality</h4>
+                <div class="efficiency-comparison">
+                    <div class="efficiency-value tavily">
+                        <span class="value">RAG-Ready</span>
+                        <span class="label">Tavily</span>
+                    </div>
+                    <div class="vs">vs</div>
+                    <div class="efficiency-value traditional">
+                        <span class="value">Raw HTML</span>
+                        <span class="label">Traditional</span>
+                    </div>
+                </div>
+                <p class="efficiency-detail">Cleaned, extracted, optimized for LLMs</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Example query chip handlers
+document.querySelectorAll('.example-chip').forEach(chip => {
+    chip.addEventListener('click', function() {
+        const query = this.getAttribute('data-query');
+        document.getElementById('query').value = query;
+        // Trigger form submission
+        document.getElementById('searchForm').dispatchEvent(new Event('submit'));
+    });
+});
+
+document.getElementById('searchForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const query = document.getElementById('query').value;
+    const maxResults = document.getElementById('maxResults').value;
+
+    // Show loading, hide errors and results
+    document.getElementById('loading').classList.remove('hidden');
+    document.getElementById('error').classList.add('hidden');
+    document.getElementById('results').classList.add('hidden');
+
+    try {
+        const formData = new FormData();
+        formData.append('query', query);
+        formData.append('max_results', maxResults);
+
+        const response = await fetch('/compare', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Search failed');
+        }
+
+        displayResults(data);
+
+    } catch (error) {
+        document.getElementById('error').textContent = error.message;
+        document.getElementById('error').classList.remove('hidden');
+    } finally {
+        document.getElementById('loading').classList.add('hidden');
+    }
+});
+
+function displayResults(data) {
+    // Update query display
+    document.getElementById('searchQuery').textContent = data.query;
+
+    // Display Tavily answer if available
+    if (data.tavily.results.answer) {
+        const answerSection = document.getElementById('tavilyAnswer');
+        answerSection.querySelector('.answer-content').textContent = data.tavily.results.answer;
+        answerSection.style.display = 'block';
+    }
+
+    // Update Tavily metrics
+    const tavilyMetrics = data.tavily.metrics;
+    document.getElementById('tavilyTokens').textContent = tavilyMetrics.total_content_tokens.toLocaleString();
+    document.getElementById('tavilyAvgTokens').textContent = Math.round(tavilyMetrics.avg_tokens_per_result);
+
+    // Update Traditional metrics
+    const tradMetrics = data.traditional.metrics;
+    document.getElementById('traditionalTokens').textContent = tradMetrics.total_snippet_tokens.toLocaleString();
+    document.getElementById('traditionalAvgTokens').textContent = Math.round(tradMetrics.avg_tokens_per_result);
+
+    // Display Tavily results
+    const tavilyResultsHtml = tavilyMetrics.results.map(result => `
+        <div class="result-card">
+            <h4>${result.title}</h4>
+            <a href="${result.url}" target="_blank" class="result-url">${result.url}</a>
+            <div class="result-meta">
+                <span class="badge">${result.content_tokens} tokens</span>
+                <span class="badge success">Relevance: ${(result.relevance_score * 100).toFixed(0)}%</span>
+            </div>
+            <p class="result-content">${data.tavily.results.results[result.index - 1].content.substring(0, 300)}...</p>
+        </div>
+    `).join('');
+    document.getElementById('tavilyResults').innerHTML = tavilyResultsHtml;
+
+    // Display Traditional results
+    const tradResultsHtml = tradMetrics.results.map(result => `
+        <div class="result-card">
+            <h4>${result.title}</h4>
+            <a href="${result.url}" target="_blank" class="result-url">${result.url}</a>
+            <div class="result-meta">
+                <span class="badge">${result.snippet_tokens} tokens (snippet only)</span>
+                <span class="badge warning">Needs Scraping</span>
+            </div>
+            <p class="result-snippet">${data.traditional.results.results[result.index - 1].snippet}</p>
+        </div>
+    `).join('');
+    document.getElementById('traditionalResults').innerHTML = tradResultsHtml;
+
+    // Display traditional workflow
+    const workflowHtml = data.traditional.workflow.map(step => `<li>${step}</li>`).join('');
+    document.getElementById('traditionalWorkflow').innerHTML = workflowHtml;
+
+    // Update comparison insights
+    const comparison = data.comparison;
+    const tokenRatio = comparison.token_advantage.ratio;
+    document.getElementById('tokenRatio').textContent = `${tokenRatio.toFixed(1)}x more content`;
+    document.getElementById('tokenDetail').textContent =
+        `${comparison.token_advantage.tavily_tokens.toLocaleString()} tokens vs ${comparison.token_advantage.traditional_tokens.toLocaleString()} tokens`;
+
+    const contextFit = tavilyMetrics.context_window_fit['4K'].results_count;
+    document.getElementById('contextFit').textContent = `${contextFit} full articles in 4K context`;
+
+    // Update efficiency dashboard - API calls needed
+    const numResults = data.traditional.results.results.length;
+    document.getElementById('traditionalApiCalls').textContent = `${1 + numResults}`;
+
+    // Show results
+    document.getElementById('results').classList.remove('hidden');
+
+    // Scroll to results
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+{% endblock %}
